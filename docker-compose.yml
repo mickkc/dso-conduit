@@ -1,0 +1,47 @@
+services:
+  frontend:
+    build:
+      context: ./conduit-frontend
+      args:
+        - "API_URL=${API_URL:-http://localhost:${BACKEND_PORT:-8080}/api}"
+    ports:
+      - ${APP_PORT:-3000}:${APP_PORT:-3000}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ./conduit-backend
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - ${BACKEND_PORT:-8080}:${BACKEND_PORT:-8080}
+    restart: unless-stopped
+    environment:
+      BACKEND_PORT: ${BACKEND_PORT:-8080}
+      POSTGRES_DB: ${POSTGRES_DB:-conduit}
+      POSTGRES_USER: ${POSTGRES_USER:-conduit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conduit}
+      POSTGRES_HOST: ${POSTGRES_HOST:-database}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      API_SECRET_KEY: ${API_SECRET_KEY}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost,0.0.0.0}
+
+  database:
+    image: postgres:latest
+    volumes:
+      - data:/var/lib/postgresql/
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-conduit}
+      POSTGRES_USER: ${POSTGRES_USER:-conduit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-conduit}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-conduit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  data:
