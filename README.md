@@ -67,6 +67,7 @@ The backend is available in the [conduit-backend submodule](/conduit-backend/). 
 - `API_SECRET_KEY`: A secret key used by Django. **Is option is required!** You can use `openssl rand -hex 32` to generate a secure one.
 - `DJANGO_ALLOWED_HOSTS`: A comma separated list of hosts allowed to access your backend.
 - `CORS_ORIGIN_WHITELIST`: A comma separated list of origins allowed to access your backend. Must include protocol, e.g. `http://127.0.0.1`.
+- `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL` & `DJANGO_SUPERUSER_PASSWORD`: Automatically creates a superuser if all of these variables are set. If a user with that name or email already exist, it is skipped.
 
 ### Frontend
 
