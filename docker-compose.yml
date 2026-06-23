@@ -8,6 +8,8 @@ services:
       - ${APP_PORT:-3000}:${APP_PORT:-3000}
     depends_on:
       - backend
+    environment:
+      APP_PORT: ${APP_PORT:-3000}
     restart: unless-stopped
 
   backend:
@@ -27,6 +29,7 @@ services:
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       API_SECRET_KEY: ${API_SECRET_KEY}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost,0.0.0.0}
+      CORS_ORIGIN_WHITELIST: ${CORS_ORIGIN_WHITELIST:-http://127.0.0.1,http://localhost,http://0.0.0.0,http://localhost:${APP_PORT:-3000}}
 
   database:
     image: postgres:latest
