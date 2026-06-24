@@ -35,7 +35,7 @@ services:
       DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:-}
 
   database:
-    image: postgres:latest
+    image: postgres:18.4
     volumes:
       - data:/var/lib/postgresql/
     restart: unless-stopped
