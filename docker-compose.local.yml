@@ -1,6 +1,9 @@
 services:
   frontend:
-    image: ghcr.io/mickkc/conduit-backend:latest
+    build:
+      context: ./conduit-frontend
+      args:
+        - "API_URL=${API_URL:-http://localhost:${BACKEND_PORT:-8080}/api}"
     ports:
       - ${APP_PORT:-3000}:${APP_PORT:-3000}
     depends_on:
@@ -10,7 +13,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/mickkc/conduit-frontend:latest 
+    build: ./conduit-backend
     depends_on:
       database:
         condition: service_healthy
