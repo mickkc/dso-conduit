@@ -75,6 +75,9 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           envs: BRANCH_NAME, REPO_URL, ENV_FILE_CONTENT
           script: |
+            #!/bin/bash
+            set -e
+
             # Create the Docker directory if it doesn't exist
             mkdir -p $HOME/Docker
 
