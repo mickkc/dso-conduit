@@ -8,7 +8,7 @@ on:
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name  }}
-  REPO_URL: ${{ github.repositoryUrl }}
+  REPO_URL: ${{ github.server_url }}/${{ github.repository }}
 
 jobs:
   release-images:
