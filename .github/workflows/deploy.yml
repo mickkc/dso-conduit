@@ -54,11 +54,19 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          envs:
+            BRANCH_NAME: ${{ github.head_ref || github.ref_name  }}
           script: |
             # Navigate to the Docker directory
             cd $HOME/Docker/dso-conduit
 
-            # Pull the released image from the GitHub Container Registry
+            # Pull the repo to get the latest docker-compose.yml file
+            git pull origin ${BRANCH_NAME}
+
+            # Checkout the branch to ensure the correct version of the docker-compose.yml is used
+            git checkout ${BRANCH_NAME}
+
+            # Pull the released images from the GitHub Container Registry
             docker compose pull
             
             # Build and run the containers
