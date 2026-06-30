@@ -9,19 +9,51 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
-      - name: Test SSH
-        uses: appleboy/ssh-action@v1
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Login to GitHub container registry
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            # Navigate to the Docker directory
-            cd $HOME/Docker/dso-conduit
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-            # Update the repository
-            git pull origin main
+      - name: Build backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./conduit-backend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/conduit-backend:latest
 
-            # Build and run the containers
-            docker compose up -d --build --remove-orphans
+      - name: Build frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./conduit-frontend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/conduit-frontend:latest
+
+      #- name: Deploy to Server
+      #  uses: appleboy/ssh-action@v1
+      #  with:
+      #    host: ${{ secrets.SERVER_IP }}
+      #    username: ${{ secrets.SERVER_USER }}
+      #    key: ${{ secrets.SERVER_SSH_KEY }}
+      #    script: |
+      #      # Navigate to the Docker directory
+      #      cd $HOME/Docker/dso-conduit
+
+      #      # Pull the released image from the GitHub Container Registry
+      #      docker compose pull
+      #
+      #      # Build and run the containers
+      #      docker compose up -d --remove-orphans
+      #      
+      #      # Clean up unused images to free up space
+      #      docker image prune -f
