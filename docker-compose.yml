@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: ghcr.io/mickkc/conduit-backend:latest
+    image: ghcr.io/mickkc/conduit-frontend:latest
     ports:
       - ${APP_PORT:-3000}:${APP_PORT:-3000}
     depends_on:
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/mickkc/conduit-frontend:latest 
+    image: ghcr.io/mickkc/conduit-backend:latest 
     depends_on:
       database:
         condition: service_healthy
