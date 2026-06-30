@@ -4,6 +4,7 @@ A backend - written in Python using Django - and a frontend - Written in TypeScr
 
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
+- [Automatic deployments](#automatic-deployments)
 - [Technical explanation](#technical-explanation)
     - [Database](#database)
     - [Backend](#backend)
