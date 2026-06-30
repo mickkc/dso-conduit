@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  release-images:
     runs-on: ubuntu-latest
 
     permissions:
@@ -40,22 +40,29 @@ jobs:
           context: ./conduit-frontend
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/conduit-frontend:latest
+          build-args: |
+            API_URL=${{ secrets.API_URL }}
+  
+  deploy-to-server:
+    runs-on: ubuntu-latest
+    needs: release-images
 
-      #- name: Deploy to Server
-      #  uses: appleboy/ssh-action@v1
-      #  with:
-      #    host: ${{ secrets.SERVER_IP }}
-      #    username: ${{ secrets.SERVER_USER }}
-      #    key: ${{ secrets.SERVER_SSH_KEY }}
-      #    script: |
-      #      # Navigate to the Docker directory
-      #      cd $HOME/Docker/dso-conduit
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Navigate to the Docker directory
+            cd $HOME/Docker/dso-conduit
 
-      #      # Pull the released image from the GitHub Container Registry
-      #      docker compose pull
-      #
-      #      # Build and run the containers
-      #      docker compose up -d --remove-orphans
-      #      
-      #      # Clean up unused images to free up space
-      #      docker image prune -f
+            # Pull the released image from the GitHub Container Registry
+            docker compose pull
+            
+            # Build and run the containers
+            docker compose up -d --remove-orphans
+            
+            # Clean up unused images to free up space
+            docker image prune -f
