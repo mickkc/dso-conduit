@@ -17,4 +17,11 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            echo "Success: $(whoami)@$(hostname)"
+            # Navigate to the Docker directory
+            cd $HOME/Docker/dso-conduit
+
+            # Update the repository
+            git pull origin main
+
+            # Build and run the containers
+            docker compose up -d --build --remove-orphans
