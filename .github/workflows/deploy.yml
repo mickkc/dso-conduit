@@ -74,6 +74,9 @@ jobs:
 
     steps:
 
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
       - name: Generate .env file
         run: |
           echo "${{ env.ENV_FILE_CONTENT }}" > .env
