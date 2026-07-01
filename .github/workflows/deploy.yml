@@ -90,7 +90,7 @@ jobs:
       - name: Sync deployment directory to server
         uses: burnett01/rsync-deployments@v9
         with:
-          remote_path: "$HOME/Docker/dso-conduit"
+          remote_path: '$HOME/Docker/dso-conduit'
           remote_host: ${{ secrets.SERVER_IP }}
           remote_user: ${{ secrets.SERVER_USER }}
           remote_key: ${{ secrets.SERVER_SSH_KEY }}
