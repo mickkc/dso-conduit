@@ -102,7 +102,6 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: BRANCH_NAME, REPO_URL, ENV_FILE_CONTENT
           script: |
             #!/bin/bash
             set -e
