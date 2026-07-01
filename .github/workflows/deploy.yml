@@ -1,0 +1,119 @@
+name: Deploy Containers
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name  }}
+  REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+  ENV_FILE_CONTENT: |
+    APP_PORT=${{ secrets.APP_PORT || '3000' }}
+    BACKEND_PORT=${{ secrets.BACKEND_PORT || '8080' }}
+    POSTGRES_DB=${{ secrets.POSTGRES_DB || 'conduit' }}
+    POSTGRES_USER=${{ secrets.POSTGRES_USER || 'conduit' }}
+    POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+    POSTGRES_HOST=${{ secrets.POSTGRES_HOST || 'database' }}
+    POSTGRES_PORT=${{ secrets.POSTGRES_PORT || '5432' }}
+    API_SECRET_KEY=${{ secrets.API_SECRET_KEY }}
+    DJANGO_ALLOWED_HOSTS=${{ secrets.DJANGO_ALLOWED_HOSTS || '127.0.0.1,localhost,0.0.0.0' }}
+    CORS_ORIGIN_WHITELIST=${{ secrets.CORS_ORIGIN_WHITELIST || 'http://127.0.0.1,http://localhost,http://0.0.0.0' }}
+    DJANGO_SUPERUSER_USERNAME=${{ secrets.DJANGO_SUPERUSER_USERNAME }}
+    DJANGO_SUPERUSER_EMAIL=${{ secrets.DJANGO_SUPERUSER_EMAIL }}
+    DJANGO_SUPERUSER_PASSWORD=${{ secrets.DJANGO_SUPERUSER_PASSWORD }}
+    DEBUG=${{ secrets.DEBUG || 'False' }}
+
+jobs:
+  release-images:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      
+      - name: Login to GitHub container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current time
+        uses: josStorer/get-current-time@v2
+        id: current-time
+        with:
+          format: YYYY-MM-DD-HH-MM-SS
+
+      - name: Build backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./conduit-backend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/conduit-backend:latest,ghcr.io/${{ github.repository_owner }}/conduit-backend:${{ steps.current-time.outputs.formattedTime }}
+
+      - name: Build frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./conduit-frontend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/conduit-frontend:latest,ghcr.io/${{ github.repository_owner }}/conduit-frontend:${{ steps.current-time.outputs.formattedTime }}
+          build-args: |
+            API_URL=${{ secrets.API_URL }}
+  
+  deploy-to-server:
+    runs-on: ubuntu-latest
+    needs: release-images
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Generate .env file
+        run: |
+          echo "${{ env.ENV_FILE_CONTENT }}" > .env
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir deployment
+          cp .env deployment/.env
+          cp docker-compose.yml deployment/docker-compose.yml
+      
+      - name: Sync deployment directory to server
+        uses: burnett01/rsync-deployments@v9
+        with:
+          remote_path: '~/Docker/dso-conduit'
+          remote_host: ${{ secrets.SERVER_IP }}
+          remote_user: ${{ secrets.SERVER_USER }}
+          remote_key: ${{ secrets.SERVER_SSH_KEY }}
+          path: "deployment/"
+          switches: "-avz --delete"
+
+      - name: Update containers on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            #!/bin/bash
+            set -e
+
+            # Navigate to the Docker directory
+            cd $HOME/Docker/dso-conduit
+
+            # Pull the released images from the GitHub Container Registry
+            docker compose pull
+            
+            # Build and run the containers
+            docker compose up -d --remove-orphans
+            
+            # Clean up unused images to free up space
+            docker image prune -f

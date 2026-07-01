@@ -4,6 +4,7 @@ A backend - written in Python using Django - and a frontend - Written in TypeScr
 
 - [Prerequisites](#prerequisites)
 - [Quickstart](#quickstart)
+- [Automatic deployments](#automatic-deployments)
 - [Technical explanation](#technical-explanation)
     - [Database](#database)
     - [Backend](#backend)
@@ -36,8 +37,32 @@ A backend - written in Python using Django - and a frontend - Written in TypeScr
     To generate a secure key, you can use `openssl rand -hex 32`.
 5. Start the containers:
     ```
-    docker compose up -d
+    docker compose -f docker-compose.local.yml up -d
     ```
+
+    >[!NOTE]
+    >This command uses the local `docker-compose.local.yml` file, because the default `docker-compose.yml` file is used for automatic deployments via GitHub Actions, which you can read more about below.
+
+## Automatic deployments
+
+This repository contains a [GitHub Action](.github/workflows/deploy.yml) to automatically build the images, publish them to the github container registry, and update the containers on a remote repository using SSH. This happens on every push to the `main` branch.
+
+To set this up, fork this repository, go to `Settings > Secrets and  variables > Actions` and create the following repository secrets:
+
+| Name | Description |
+|:----:|-------------|
+| `API_URL` | The URL your backend will be reachable at. Used as a build parameter for the frontend image |
+| `SERVER_IP` | The IP (or hostname) of the server you want to deploy the application to. |
+| `SERVER_SSH_KEY` | The private key used to connect to the server via SSH. |
+| `SERVER_USER` | The username of the user to connect to the server as. |
+| `API_SECRET_KEY` | A secret key to use for the Django backend. |
+| `POSTGRES_PASSWORD` | A password for the database. |
+
+You can also define your configuration using the variables defined in the [.env.example](.env.example) file there.
+
+The Action will automatically create a directory `$HOME/Docker`, if it doesn't exist, and clone this repo there, if it isn't already cloned.
+
+This repo will be updated before the containers get updated, to allow changes to the docker-compose.yml file to be automatically applied.
 
 ## Technical explanation
 
