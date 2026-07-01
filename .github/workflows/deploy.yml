@@ -73,7 +73,28 @@ jobs:
     needs: release-images
 
     steps:
-      - name: Deploy to Server
+
+      - name: Generate .env file
+        run: |
+          echo "${{ env.ENV_FILE_CONTENT }}" > .env
+
+      - name: Prepare deployment directory
+        run: |
+          mkdir deployment
+          cp .env deployment/.env
+          cp docker-compose.yml deployment/docker-compose.yml
+      
+      - name: Sync deployment directory to server
+        uses: burnett01/rsync-deployments@v9
+        with:
+          remote_path: "$HOME/Docker/dso-conduit"
+          remote_host: ${{ secrets.SERVER_IP }}
+          remote_user: ${{ secrets.SERVER_USER }}
+          remote_key: ${{ secrets.SERVER_SSH_KEY }}
+          path: "deployment/"
+          switches: "-avz --delete"
+
+      - name: Update containers on server
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -84,25 +105,8 @@ jobs:
             #!/bin/bash
             set -e
 
-            # Create the Docker directory if it doesn't exist
-            mkdir -p $HOME/Docker
-
-            # Clone the repository if it doesn't exist
-            if [ ! -d "$HOME/Docker/dso-conduit" ]; then
-              git clone ${REPO_URL} $HOME/Docker/dso-conduit
-            fi
-
-            # Create the .env file with the provided environment variables
-            echo "${ENV_FILE_CONTENT}" > $HOME/Docker/dso-conduit/.env
-
             # Navigate to the Docker directory
             cd $HOME/Docker/dso-conduit
-
-            # Pull the repo to get the latest docker-compose.yml file
-            git pull origin ${BRANCH_NAME}
-
-            # Checkout the branch to ensure the correct version of the docker-compose.yml is used
-            git checkout ${BRANCH_NAME}
 
             # Pull the released images from the GitHub Container Registry
             docker compose pull
